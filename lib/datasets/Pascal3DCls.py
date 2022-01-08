@@ -57,6 +57,7 @@ class Pascal3D(data.Dataset):
     s = max((box[2] - box[0]), (box[3] - box[1])) * ref.padScale
     v = np.array([self.annot['viewpoint_azimuth'][index], self.annot['viewpoint_elevation'][index], 
          self.annot['viewpoint_theta'][index]]) / 180.
+    #range of v:(-1,1)
     return c, s, v
       
   def __getitem__(self, index):
@@ -76,6 +77,7 @@ class Pascal3D(data.Dataset):
     inp = inp.transpose(2, 0, 1).astype(np.float32) / 256.
     
     if self.split == 'train':
+      # random flipping
       if np.random.random() < 0.5:
         inp = Flip(inp)
         v[0] = - v[0]
@@ -90,6 +92,8 @@ class Pascal3D(data.Dataset):
     v[1] = np.ceil(vv[1] * self.opt.numBins / 2. + self.opt.numBins / 2. - 1)
     v[2] = np.ceil(vv[2] * self.opt.numBins / 2. + self.opt.numBins / 2. - 1)
     v = v.astype(np.int32)
+
+    #把其他类的view置为numBins
     if self.opt.specificView:
       vv = np.ones(3 * len(ref.pascalClassId), dtype = np.int32) * self.opt.numBins
       vv[class_id * 3: class_id * 3 + 3] = v.copy()

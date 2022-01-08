@@ -47,6 +47,7 @@ for split in ['train', 'val']:
       annot[tag] = []
     maxImgName = -1 
 
+    
     for obj in objs:
         cls = obj[:obj.find('_')]
         model_path = MODEL_PATH + '{}.mat'.format(cls)
@@ -89,11 +90,12 @@ for split in ['train', 'val']:
         cnt = 0
         obj_path = SAVE_PATH + obj
         img_path = IMAGE_PATH + obj
+
         for (t, im_name) in enumerate(os.listdir(img_path)):
             im_ = im_name[:im_name.find('.')]
             if not (im_ in files):
               continue
-            
+
             obj_id = im_name.split('.')[0]
             annot_file = ANNOT_PATH + obj + '/' + obj_id
             data_ = sio.loadmat(annot_file)
@@ -288,7 +290,7 @@ for split in ['train', 'val']:
         print(obj, cnt)
 
     print('nProjectedAnchor', nProjectedAnchor , total)
-    with h5py.File('../../data/Pascal3D/Pascal3D-{}.h5'.format(split),'w') as f:
+    with h5py.File('../data/Pascal3D/Pascal3D-{}.h5'.format(split),'w') as f:
         f.attrs['name'] = 'Pascal3D-{}'.format(split)
         for k in keys:
             f[k] = np.array(annot[k])

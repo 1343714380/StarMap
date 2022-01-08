@@ -20,15 +20,17 @@ def step(split, epoch, opt, dataLoader, model, criterion, optimizer = None):
   bar = Bar('{}'.format(opt.expID), max=nIters)
   
   for i, (input, view) in enumerate(dataLoader):
-    input_var = torch.autograd.Variable(input.cuda(opt.GPU, async = True)).float().cuda(opt.GPU)
+    input_var = torch.autograd.Variable(input.cuda(opt.GPU, True)).float().cuda(opt.GPU)
+    #(B,3*12)->(B*3*12)
     target_var = torch.autograd.Variable(view.view(-1)).long().cuda(opt.GPU)
     output = model(input_var)
 
     numBins = opt.numBins
+    # let other label = numBins
     loss =  torch.nn.CrossEntropyLoss(ignore_index = numBins).cuda(opt.GPU)(output.view(-1, numBins), target_var)
 
     Acc.update(AccViewCls(output.data, view, numBins, opt.specificView))
-    Loss.update(loss.data[0], input.size(0))
+    Loss.update(loss.item(), input.size(0))
 
     if split == 'train':
       optimizer.zero_grad()

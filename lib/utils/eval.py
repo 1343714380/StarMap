@@ -80,6 +80,7 @@ def RotMat(axis, ang):
   return res
 
 def angle2dcm(angle):
+  angle=angle.cpu()
   azimuth = angle[0]
   elevation = angle[1]
   theta = angle[2]
@@ -92,7 +93,7 @@ def AccViewCls(output, target, numBins, specificView):
     acc = 0
     for t in range(target.shape[0]):
       idx = np.where(target[t] != numBins)
-      ps = idx[0][0] / 3 * 3
+      ps = int (idx[0][0] / 3 * 3)
       _, pred = output[t].view(-1, numBins)[ps: ps + 3].topk(1, 1, True, True)
       pred = pred.view(3).float() * binSize / 180. * pi 
       gt = target[t][ps: ps + 3].float() * binSize / 180. * pi

@@ -47,6 +47,7 @@ class opts():
     if opt.task == 'cls':
       assert not ('hg' in opt.arch), 'architecture for classification should not be hg!'
       opt.numOutput = opt.numBins * 3
+      # train classifer per class output= bin * 3 * num_class
       if opt.specificView:
         opt.numOutput *= len(ref.pascalClassId)
 
