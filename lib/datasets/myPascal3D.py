@@ -50,7 +50,7 @@ class Pascal3D(data.Dataset):
     path = '{}/Images/{}_{}/{}'.format(ref.pascal3dDir, ref.pascalClassName[self.annot['class_id'][index]], 
                                 ref.pascalDatasetName[self.annot['dataset'][index]], img_name)
     img = cv2.imread(path)
-    return img
+    return img, img_name
   
   
   def GetPartInfo(self, index):
@@ -63,7 +63,7 @@ class Pascal3D(data.Dataset):
     return c, s, v
       
   def __getitem__(self, index):
-    img = self.LoadImage(index)
+    img,img_name = self.LoadImage(index)
     class_id = self.annot['class_id'][index]
     c, s, v = self.GetPartInfo(index)
     s = min(s, max(img.shape[0], img.shape[1])) * 1.0
@@ -101,7 +101,7 @@ class Pascal3D(data.Dataset):
       vv[class_id * 3: class_id * 3 + 3] = v.copy()
       v = vv.copy()
 
-    return inp, v
+    return inp, v,img_name
 
     
   def __len__(self):
