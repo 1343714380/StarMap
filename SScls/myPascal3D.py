@@ -145,10 +145,20 @@ class Pascal3D(data.Dataset):
   def __len__(self):
     return self.nSamples
 
-def get_dataloader(opt):
-  train_loader = data.DataLoader(
-  Pascal3D(opt, 'train'), 
-  batch_size = opt.trainBatch, 
-  shuffle = True,
-  num_workers = int(opt.nThreads)
-  )
+def get_dataloader(opt,split):
+  if(split=='train'):
+    return  data.DataLoader(
+    Pascal3D(opt, split), 
+    batch_size = opt.trainBatch, 
+    shuffle = True,
+    num_workers = int(opt.nThreads)
+    )
+  else:
+    return  data.DataLoader(
+      Pascal3D(opt, 'val'), 
+      batch_size = 1, 
+      shuffle = True if opt.DEBUG > 1 else False,
+      num_workers = 1)
+  
+  
+  

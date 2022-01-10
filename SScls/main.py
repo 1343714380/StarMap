@@ -16,7 +16,7 @@ from model import getModel, saveModel
 opt = opts().parse()
 
 if opt.task == 'cls':
-  from myPascal3D import Pascal3D as Dataset
+  from myPascal3D import Pascal3D as Dataset, get_dataloader
   from trainCls import train, val
 else:
   if opt.dataset == 'Pascal3D':
@@ -39,24 +39,14 @@ def main():
     model = model.cuda(opt.GPU)
     criterion = criterion.cuda(opt.GPU)
   
-  val_loader = torch.utils.data.DataLoader(
-      Dataset(opt, 'val'), 
-      batch_size = 1, 
-      shuffle = True if opt.DEBUG > 1 else False,
-      num_workers = 1
-  )
+  val_loader = get_dataloader(opt,'val')
 
   if opt.test:
     _, preds = val(0, opt, val_loader, model, criterion)
     torch.save({'opt': opt, 'preds': preds}, os.path.join(opt.saveDir, 'preds.pth'))
     return
 
-  train_loader = torch.utils.data.DataLoader(
-      Dataset(opt, 'train'), 
-      batch_size = opt.trainBatch, 
-      shuffle = True,
-      num_workers = int(opt.nThreads)
-  )
+  train_loader = get_dataloader(opt,'train')
 
   for epoch in range(1, opt.nEpochs + 1):
     mark = epoch if opt.saveAllModels else 'last'
