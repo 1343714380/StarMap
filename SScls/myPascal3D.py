@@ -15,12 +15,8 @@ class Pascal3D(data.Dataset):
     tags = ['bbox', 'anchors', 'vis', 'dataset', 'class_id', 'imgname', 
             'viewpoint_azimuth', 'viewpoint_elevation', 'viewpoint_theta', 'anchors_3d', 
             'space_embedding', 'truncated', 'occluded', 'difficult','valid']
-    f = File('{}/testPascal3D/Pascal3D-{}.h5'.format(ref.dataDir, split), 'r')
-    for tag in tags:
-      annot[tag] = np.asarray(f[tag]).copy()
-    f.close()
-    annot['index'] = np.arange(len(annot['class_id']))
-    tags = tags + ['index']
+    
+    annot = self.load_tags_from_h5(tags,opt.phase,split)
 
     self.split = split
     self.opt = opt
