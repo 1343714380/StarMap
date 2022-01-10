@@ -101,7 +101,7 @@ class Pascal3D(data.Dataset):
       vv[class_id * 3: class_id * 3 + 3] = v.copy()
       v = vv.copy()
 
-    return inp, v,img_name
+    return dict(img= inp, anno=v, img_name=img_name)
 
     
   def __len__(self):
