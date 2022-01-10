@@ -44,6 +44,7 @@ class Pascal3D(data.Dataset):
     if(phase == 'ulb_train'):
       for tag in tags:
         annot[tag].append(np.asarray(f2[tag]).copy())
+      f2.close()
     
     annot['index'] = np.arange(len(annot['class_id']))
     tags = tags + ['index']
