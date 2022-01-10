@@ -22,7 +22,7 @@ def step(split, epoch, opt, dataLoader, model, criterion, optimizer = None):
   
   for i, data in enumerate(dataLoader):
     input = data['img']
-    view = data['anno']
+    view = data['annot']
     img_name = data['img_name']
     input_var = torch.autograd.Variable(input.cuda(opt.GPU, True)).float().cuda(opt.GPU)
     #(B,3*12)->(B*3*12)

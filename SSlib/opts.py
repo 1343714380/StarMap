@@ -6,7 +6,7 @@ import ref
 class opts():
   def __init__(self):
     self.parser = argparse.ArgumentParser()
-    self.parser.add_argument('-expID', default = 'default', help = 'Experiment ID')
+    self.parser.add_argument('-expID', default = 'cls', help = 'Experiment ID')
     self.parser.add_argument('-GPU', type = int, default = 0, help = 'GPU id')
     self.parser.add_argument('-nThreads', type = int, default = 2, help = 'nThreads')
     self.parser.add_argument('-dataset', default = 'Pascal3D', help = 'Pascal3D | ObjectNet3D')
@@ -17,21 +17,23 @@ class opts():
     self.parser.add_argument('-saveAllModels', action = 'store_true', help = '')
     
     self.parser.add_argument('-loadModel', default = '', help = 'Provide full path to a previously trained model')
-    self.parser.add_argument('-arch', default = 'hg', help = '')
+    self.parser.add_argument('-arch', default = 'resnet18', help = '')
     self.parser.add_argument('-nFeats', type = int, default = 256, help = '# features in the hourglass')
     self.parser.add_argument('-nStack', type = int, default = 2, help = '# hourglasses to stack')
     self.parser.add_argument('-nModules', type = int, default = 2, help = '# residual modules at each hourglass')
     
-    self.parser.add_argument('-LR', type = float, default = 2.5e-4, help = 'Learning Rate')
-    self.parser.add_argument('-dropLR', type = int, default = 1000000, help = 'drop LR')
+    self.parser.add_argument('-LR', type = float, default = 0.01, help = 'Learning Rate')
+    self.parser.add_argument('-dropLR', type = int, default = 20, help = 'drop LR')
     self.parser.add_argument('-nEpochs', type = int, default = 90, help = '#training epochs')
     self.parser.add_argument('-valIntervals', type = int, default = 5, help = '#valid intervel')
-    self.parser.add_argument('-trainBatch', type = int, default = 6, help = 'Mini-batch size')
+    self.parser.add_argument('-trainBatch', type = int, default = 32, help = 'Mini-batch size')
     self.parser.add_argument('-regWeight', type = float, default = 0.1, help = 'depth regression loss weight')
-    self.parser.add_argument('-task', default = 'star', help = 'star | staremb | starembdep | cls')
+    self.parser.add_argument('-task', default = 'cls', help = 'star | staremb | starembdep | cls')
     self.parser.add_argument('-numBins', type = int, default = 21, help = '')
     self.parser.add_argument('-specificView', action = 'store_true', help = '')
     self.parser.add_argument('-ObjectNet3DTrainAll', action = 'store_true', help = '')
+
+    self.parser.add_argument('-phase', default='train', help = 'train | ulb_train | label')
 
   def parse(self):
     opt = self.parser.parse_args()
@@ -49,6 +51,7 @@ class opts():
       opt.numOutput = opt.numBins * 3
       # train classifer per class output= bin * 3 * num_class
       if opt.specificView:
+        opt.expID +='Spec'
         opt.numOutput *= len(ref.pascalClassId)
 
     print('Output dim', opt.numOutput)
