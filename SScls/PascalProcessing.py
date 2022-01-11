@@ -16,7 +16,7 @@ PATH = ref.pascal3dDir
 MODEL_PATH = PATH + 'CAD/'
 ANNOT_PATH = PATH + 'Annotations/'
 IMAGE_PATH = PATH + 'Images/'
-SAVE_PATH = ref.dataDir + 'test1Pascal3D'
+SAVE_PATH = ref.dataDir + 'test3Pascal3D'
 IMGNET_SPLIT_PATH = ref.pascal3dDir + 'Image_sets/'
 PASCAL_SPLIT_PATH = ref.pascal3dDir + 'PASCAL/VOCdevkit/VOC2012/ImageSets/Main/'
 if not os.path.exists(SAVE_PATH):

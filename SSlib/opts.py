@@ -34,6 +34,7 @@ class opts():
     self.parser.add_argument('-ObjectNet3DTrainAll', action = 'store_true', help = '')
 
     self.parser.add_argument('-phase', default='train', help = 'train | ulb_train | label')
+    self.parser.add_argument('-thres', default=0.9, help = '')
 
   def parse(self):
     opt = self.parser.parse_args()

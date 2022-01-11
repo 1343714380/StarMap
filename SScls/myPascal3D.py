@@ -8,6 +8,8 @@ import cv2
 from utils.utils import Rnd, Flip
 from utils.img import Crop, DrawGaussian, Transform, Transform3D
 
+SAVE_PATH = ref.dataDir + 'test2Pascal3D/'
+
 class Pascal3D(data.Dataset):
   def __init__(self, opt, split):
     print('==> initializing pascal3d Star {} data.'.format(split))
@@ -21,17 +23,17 @@ class Pascal3D(data.Dataset):
     self.split = split
     self.opt = opt
     self.annot = annot
-    self.nSamples = len(annot['class_id'])
+    self.nSamples = len(annot['imgname'])
     print('Loaded Pascal3D {} {} samples'.format(split, self.nSamples))
-  
+
   def load_tags_from_h5(self,tags,phase,split):
     if(phase == 'label'):
-      f = File('{}/testPascal3D/ulbPascal3D.h5'.format(ref.dataDir), 'r')
+      f = File(SAVE_PATH + 'ulbPascal3D-{}.h5'.format(split), 'r')
     elif(phase =='train'):
-      f = File('{}/testPascal3D/Pascal3D-{}.h5'.format(ref.dataDir, split), 'r')
+      f = File(SAVE_PATH +'Pascal3D-{}.h5'.format(split), 'r')
     else:
-      f = File('{}/testPascal3D/Pascal3D-{}.h5'.format(ref.dataDir, split), 'r')
-      f2 =  File('{}/testPascal3D/pseudoPascal3D-{}.h5'.format(ref.dataDir, split), 'r')
+      f = File(SAVE_PATH + 'Pascal3D-{}.h5'.format(split), 'r')
+      f2 =  File(SAVE_PATH + 'pseudoPascal3D-{}.h5'.format(split), 'r')
     annot = {}  
     for tag in tags:
       annot[tag] = np.asarray(f[tag]).copy()
@@ -39,7 +41,7 @@ class Pascal3D(data.Dataset):
 
     if(phase == 'ulb_train'):
       for tag in tags:
-        annot[tag].append(np.asarray(f2[tag]).copy())
+        annot[tag]+= np.asarray(f2[tag]).copy()
       f2.close()
     
     annot['index'] = np.arange(len(annot['class_id']))
@@ -75,10 +77,14 @@ class Pascal3D(data.Dataset):
     box = self.annot['bbox'][index].copy()
     c = np.array([(box[0] + box[2]) / 2., (box[1] + box[3]) / 2.])
     s = max((box[2] - box[0]), (box[3] - box[1])) * ref.padScale
+   
+    return c, s, 
+  
+  def GetView(self,index):
     v = np.array([self.annot['viewpoint_azimuth'][index], self.annot['viewpoint_elevation'][index], 
          self.annot['viewpoint_theta'][index]]) / 180.
     #range of v:(-1,1)
-    return c, s, v
+    return v
 
   def random_crop(self, img, c, s, v):
     s = s * (2 ** Rnd(ref.scale))
@@ -117,11 +123,23 @@ class Pascal3D(data.Dataset):
 
   def __getitem__(self, index):
     img,img_name = self.LoadImage(index)
+
+    
+
+    #if(self.opt.phase == 'ulb_train'):
+
+    
     class_id = self.annot['class_id'][index]
-    c, s, v = self.GetPartInfo(index)
+    c, s = self.GetPartInfo(index)
     s = min(s, max(img.shape[0], img.shape[1])) * 1.0
 
     r = 0
+    if (self.opt.phase =='label'):
+      inp = Crop(img, c, s, r, ref.inputRes)
+      inp = inp.transpose(2, 0, 1).astype(np.float32) / 256.
+      return dict(img = inp, imgname=img_name,class_id = self.annot['class_id'][index])
+
+    v = self.GetView(index)
     if self.split == 'train':
       inp = self.random_crop(img, c, s, v)
       inp = inp.transpose(2, 0, 1).astype(np.float32) / 256.
@@ -130,8 +148,9 @@ class Pascal3D(data.Dataset):
       inp = Crop(img, c, s, r, ref.inputRes)
       inp = inp.transpose(2, 0, 1).astype(np.float32) / 256.
     
-
-    self.view_discretization(v)
+    
+    
+    self.view_discretization(v)#角度离散化
 
     #把其他类的view置为numBins
     if self.opt.specificView:
@@ -139,14 +158,21 @@ class Pascal3D(data.Dataset):
 
 
 
-    return dict(img= inp, annot=v,img_name = img_name)
+    return dict(img= inp, annot=v)
 
     
   def __len__(self):
     return self.nSamples
 
 def get_dataloader(opt,split):
-  if(split=='train'):
+  if(opt.phase == 'label'):
+    return  data.DataLoader(
+    Pascal3D(opt, split), 
+    batch_size = opt.trainBatch, 
+    shuffle = True,
+    num_workers = int(opt.nThreads)
+    )
+  elif(split=='train'):
     return  data.DataLoader(
     Pascal3D(opt, split), 
     batch_size = opt.trainBatch, 
