@@ -12,12 +12,16 @@ SAVE_PATH = ref.dataDir + 'test3Pascal3D/'
 
 class Pascal3D(data.Dataset):
   def __init__(self, opt, split):
-    print('==> initializing pascal3d Star {} data.'.format(split))
+    print('==> initializing pascal3d {} data during {} phase.'.format(split,opt.phase))
     annot = {}
     tags = ['bbox', 'anchors', 'vis', 'dataset', 'class_id', 'imgname', 
             'viewpoint_azimuth', 'viewpoint_elevation', 'viewpoint_theta', 'anchors_3d', 
             'space_embedding', 'truncated', 'occluded', 'difficult','valid']
     self.opt = opt
+    if opt.single_cate:
+      self.save_path = SAVE_PATH + opt.cate +'/'
+    else:
+      self.save_path = SAVE_PATH
     annot = self.load_tags_from_h5(tags,opt.phase,split)
 
     self.split = split
@@ -27,15 +31,13 @@ class Pascal3D(data.Dataset):
     print('Loaded Pascal3D {} {} samples'.format(split, self.nSamples))
 
   def load_tags_from_h5(self,tags,phase,split):
-    if(self.opt.single_cate):
-      f = File(SAVE_PATH + self.opt.cate+'/Pascal3D-{}.h5'.format(split), 'r')
-    elif(phase == 'label'):
-      f = File(SAVE_PATH + 'ulbPascal3D-{}.h5'.format(split), 'r')
+    if(phase == 'label'):
+      f = File(self.save_path + 'ulbPascal3D-{}.h5'.format(split), 'r')
     elif(phase =='train'):
-      f = File(SAVE_PATH +'Pascal3D-{}.h5'.format(split), 'r')
+      f = File(self.save_path +'Pascal3D-{}.h5'.format(split), 'r')
     else:
-      f = File(SAVE_PATH + 'Pascal3D-{}.h5'.format(split), 'r')
-      f2 =  File(SAVE_PATH + 'pseudoPascal3D-{}.h5'.format(split), 'r')
+      f = File(self.save_path + 'Pascal3D-{}.h5'.format(split), 'r')
+      f2 =  File(self.save_path + 'pseudoPascal3D-{}.h5'.format(split), 'r')
     annot = {}  
     for tag in tags:
       annot[tag] = np.asarray(f[tag]).copy()
@@ -181,12 +183,17 @@ def get_dataloader(opt,split):
       num_workers = 1)
   
 
-def load_tags_to_h5(annot,split):
+def load_tags_to_h5(opt,annot,split):
   tags = ['class_id', 'imgname', 'viewpoint_azimuth', 'viewpoint_elevation', 'viewpoint_theta']
   nSamples = len(annot['imgname'])
   print('Save Pascal3D pseudo label data {} samples'.format(nSamples))
-  with File(SAVE_PATH+'pseudoPascal3D-{}.h5'.format(split),'w') as f:
+  if (opt.single_cate):
+    file = SAVE_PATH + opt.cate+'/pseudoPascal3D-{}.h5'.format(split)
+  else: 
+    file = SAVE_PATH + 'pseudoPascal3D-{}.h5'.format(split)
+  with File(file,'w') as f:
     for tag in tags:
+      print(type(annot[tag]))
       f[tag]=annot[tag].copy()
   f.close()  
   

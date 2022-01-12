@@ -83,7 +83,12 @@ def main():
     mode = 'SpecificView'
   else:
     mode = 'GeneralView'
-  torch.save(model.cpu(), os.path.join(opt.saveDir, 'ssratio_{}_{}_{}_{}_model_cpu.pth'.format(opt.ssratio,opt.arch,opt.phase,mode)))
+  if opt.unpretrain:
+    pretrain ='Pretrained'
+  else:
+    pretrain = 'unPretrained'
+  torch.save(model.cpu(), os.path.join(opt.saveDir, 'ssratio_{}_{}_{}ingPhase_{}_{}_model_cpu.pth'.format(
+    opt.ssratio,opt.arch,opt.phase,mode,pretrain)))
 
 if __name__ == '__main__':
   main()

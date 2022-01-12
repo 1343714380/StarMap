@@ -18,10 +18,10 @@ def getModel(opt):
   if opt.arch.startswith('resnet'):
     model.avgpool = nn.AvgPool2d(8, stride=1)
     if '18' in opt.arch:
-      model.fc = nn.Sequential(nn.Linear(512 * 1, opt.numOutput),nn.Softmax(dim = 1))
+      model.fc = nn.Sequential(nn.Linear(512 * 1, opt.numOutput))
       #softmax will cause to fault if use specificView
     else :
-      model.fc = nn.Sequential(nn.Linear(512 * 4, opt.numOutput),nn.Softmax(dim = 1))
+      model.fc = nn.Sequential(nn.Linear(512 * 4, opt.numOutput))
 
     """
     nn.init.kaiming_normal_(model.fc.weight)
@@ -45,9 +45,9 @@ def getModel(opt):
                           momentum=0.9,
                           weight_decay=1e-4)
   
-  if opt.loadModel != '':
-    print("=> loading model '{}'".format(opt.loadModel))
-    checkpoint = torch.load(opt.loadModel)
+  if opt.loadModel:
+    print("=> loading model '{}'".format(opt.cpt))
+    checkpoint = torch.load(opt.cpt)
     if type(checkpoint) == type({}):
       state_dict = checkpoint['state_dict']
     else:

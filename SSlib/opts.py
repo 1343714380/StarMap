@@ -16,9 +16,9 @@ class opts():
     self.parser.add_argument('-debugPath', default = '../debug/', help = '')
     self.parser.add_argument('-saveAllModels', action = 'store_true', help = '')
     
-    #/home/kpl/jr/StarMap/exp/clsSpec/ssraio/0.05/ssratio_0.05_resnet50_model_cpu.pth
-    self.parser.add_argument('-loadModel', default = '',
-     help = 'Provide full path to a previously trained model')
+    self.parser.add_argument('-cpt',
+    default='/home/kpl/jr/StarMap/exp/cls/ssraio0.05/sofa/ssratio_0.05_resnet50_trainingPhase_GeneralView_Pretrained_model_cpu.pth')
+    self.parser.add_argument('-loadModel', action='store_true',help = 'Provide full path to a previously trained model')
     self.parser.add_argument('-arch', default = 'resnet50', help = '')
     self.parser.add_argument('-nFeats', type = int, default = 256, help = '# features in the hourglass')
     self.parser.add_argument('-nStack', type = int, default = 2, help = '# hourglasses to stack')

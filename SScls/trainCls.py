@@ -1,5 +1,6 @@
 import h5py
 import torch
+import torch.nn.functional as f
 import numpy as np
 from utils.utils import AverageMeter, Flip
 from utils.eval import AccViewCls
@@ -27,11 +28,13 @@ def step(split, epoch, opt, dataLoader, model, optimizer = None):
               'viewpoint_elevation' :[],
               'viewpoint_theta' :[]
               }
+  numBins = opt.numBins            
   for i, data in enumerate(dataLoader):
     input = data['img']
     input_var = torch.autograd.Variable(input.cuda(opt.GPU, True)).float().cuda(opt.GPU)
     output = model(input_var)
-    numBins = opt.numBins
+    
+    
     if opt.phase == 'label':
       pseudo_batch = filter_label(data,opt,numBins,output)
       for key in pseudo_batch.keys():
@@ -45,7 +48,6 @@ def step(split, epoch, opt, dataLoader, model, optimizer = None):
     
     #(B,3*12)->(B*3*12)
     target_var = torch.autograd.Variable(view.view(-1)).long().cuda(opt.GPU)
-
     
     # let other label = numBins
     loss =  torch.nn.CrossEntropyLoss(ignore_index = numBins).cuda(opt.GPU)(output.view(-1, numBins), target_var)
@@ -114,7 +116,8 @@ def filter_label(data,opt,numBins,output):
   class_id = data['class_id']
 
   output = output.view(opt.trainBatch,-1,numBins)
-  
+  output = f.softmax(output,dim = -1)
+
   view = torch.rand(output.shape[0],3, numBins)
   if(opt.specificView):
     for i in range(output.shape[0]):
@@ -131,10 +134,9 @@ def filter_label(data,opt,numBins,output):
   azimuth = []
   elevation =[]
   theta= []
+
   for i in range(mark.shape[0]):
     if(mark[i][0] and mark[i][1] and mark[i][2]):
-      if(i==0):
-        print(000)
       pseudo_img.append(imgname[i])
       pseudo_class.append(class_id[i])
       azimuth.append(view[i][0])
@@ -150,8 +152,8 @@ def filter_label(data,opt,numBins,output):
 
 def label_train_set(opt, train_loader, model):
   annot = step('val', 0, opt, train_loader, model, None) # set split='val', let the mode be eval mode
-  load_tags_to_h5(annot,'train')
+  load_tags_to_h5(opt,annot,'train')
 
 def label_val_set(opt, val_loader, model):
   annot = step('val', 0, opt, val_loader, model, None)
-  load_tags_to_h5(annot,'val')
+  load_tags_to_h5(opt,annot,'val')

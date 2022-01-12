@@ -19,6 +19,7 @@ from myPascal3D import Pascal3D as Dataset, get_dataloader
 from trainCls import label_train_set, label_val_set
 
 def main():
+  opt.phase='label'
   now = datetime.datetime.now()
   logger = Logger(opt.saveDir + '/logs_{}'.format(now.isoformat()))
   model, optimizer = getModel(opt)
