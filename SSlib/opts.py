@@ -16,8 +16,10 @@ class opts():
     self.parser.add_argument('-debugPath', default = '../debug/', help = '')
     self.parser.add_argument('-saveAllModels', action = 'store_true', help = '')
     
-    self.parser.add_argument('-loadModel', default = '', help = 'Provide full path to a previously trained model')
-    self.parser.add_argument('-arch', default = 'resnet18', help = '')
+    #/home/kpl/jr/StarMap/exp/clsSpec/ssraio/0.05/ssratio_0.05_resnet50_model_cpu.pth
+    self.parser.add_argument('-loadModel', default = '',
+     help = 'Provide full path to a previously trained model')
+    self.parser.add_argument('-arch', default = 'resnet50', help = '')
     self.parser.add_argument('-nFeats', type = int, default = 256, help = '# features in the hourglass')
     self.parser.add_argument('-nStack', type = int, default = 2, help = '# hourglasses to stack')
     self.parser.add_argument('-nModules', type = int, default = 2, help = '# residual modules at each hourglass')
@@ -35,6 +37,10 @@ class opts():
 
     self.parser.add_argument('-phase', default='train', help = 'train | ulb_train | label')
     self.parser.add_argument('-thres', default=0.9, help = '')
+    self.parser.add_argument('-ssratio', default=0.05, help = '')
+    self.parser.add_argument('-single_cate', action='store_true', help = '')
+    self.parser.add_argument('-cate', default= 'sofa', help = '')
+    self.parser.add_argument('-testAccu', action='store_true', help = '')
 
   def parse(self):
     opt = self.parser.parse_args()
@@ -61,7 +67,7 @@ class opts():
       return opt
     if opt.test:
       opt.expID = opt.expID + 'TEST'
-    opt.saveDir = os.path.join(ref.expDir, opt.expID)
+    opt.saveDir = os.path.join(ref.expDir, opt.expID,'ssraio'+str(opt.ssratio))
 
     args = dict((name, getattr(opt, name)) for name in dir(opt)
                 if not name.startswith('_'))

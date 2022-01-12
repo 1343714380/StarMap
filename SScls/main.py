@@ -31,31 +31,36 @@ def main():
   now = datetime.datetime.now()
   logger = Logger(opt.saveDir + '/logs_{}'.format(now.isoformat()))
   model, optimizer = getModel(opt)
-
-  criterion = torch.nn.MSELoss()
   
   if opt.GPU > -1:
     print('Using GPU', opt.GPU)
     model = model.cuda(opt.GPU)
-    criterion = criterion.cuda(opt.GPU)
   
   val_loader = get_dataloader(opt,'val')
 
   if opt.test:
-    _, preds = val(0, opt, val_loader, model, criterion)
+    _, preds = val(0, opt, val_loader, model)
     torch.save({'opt': opt, 'preds': preds}, os.path.join(opt.saveDir, 'preds.pth'))
     return
 
   train_loader = get_dataloader(opt,'train')
 
+  if opt.testAccu:
+    log_dict_val, preds = val(0, opt, train_loader, model)
+    for k, v in log_dict_val.items():
+      logger.scalar_summary('val_{}'.format(k), v, 0)
+      logger.write('{} {:8f} | '.format(k, v))
+    return 
+
   for epoch in range(1, opt.nEpochs + 1):
     mark = epoch if opt.saveAllModels else 'last'
-    log_dict_train, _ = train(epoch, opt, train_loader, model, criterion, optimizer)
+    
+    log_dict_train, _ = train(epoch, opt, train_loader, model, optimizer)
     for k, v in log_dict_train.items():
       logger.scalar_summary('train_{}'.format(k), v, epoch)
       logger.write('{} {:8f} | '.format(k, v))
     if epoch % opt.valIntervals == 0:
-      log_dict_val, preds = val(epoch, opt, val_loader, model, criterion)
+      log_dict_val, preds = val(epoch, opt, val_loader, model)
       for k, v in log_dict_val.items():
         logger.scalar_summary('val_{}'.format(k), v, epoch)
         logger.write('{} {:8f} | '.format(k, v))
@@ -67,7 +72,11 @@ def main():
       for param_group in optimizer.param_groups:
           param_group['lr'] = lr
   logger.close()
-  torch.save(model.cpu(), os.path.join(opt.saveDir, 'model_cpu.pth'))
+  if opt.specificView:
+    mode = 'SpecificView'
+  else:
+    mode = 'GeneralView'
+  torch.save(model.cpu(), os.path.join(opt.saveDir, 'ssratio_{}_{}_{}_{}_model_cpu.pth'.format(opt.ssratio,opt.arch,opt.phase,mode)))
 
 if __name__ == '__main__':
   main()

@@ -8,7 +8,7 @@ import cv2
 from utils.utils import Rnd, Flip
 from utils.img import Crop, DrawGaussian, Transform, Transform3D
 
-SAVE_PATH = ref.dataDir + 'test2Pascal3D/'
+SAVE_PATH = ref.dataDir + 'test3Pascal3D/' 
 
 class Pascal3D(data.Dataset):
   def __init__(self, opt, split):
@@ -17,17 +17,19 @@ class Pascal3D(data.Dataset):
     tags = ['bbox', 'anchors', 'vis', 'dataset', 'class_id', 'imgname', 
             'viewpoint_azimuth', 'viewpoint_elevation', 'viewpoint_theta', 'anchors_3d', 
             'space_embedding', 'truncated', 'occluded', 'difficult','valid']
-    
+    self.opt = opt
     annot = self.load_tags_from_h5(tags,opt.phase,split)
 
     self.split = split
-    self.opt = opt
+    
     self.annot = annot
     self.nSamples = len(annot['imgname'])
     print('Loaded Pascal3D {} {} samples'.format(split, self.nSamples))
 
   def load_tags_from_h5(self,tags,phase,split):
-    if(phase == 'label'):
+    if(self.opt.single_cate):
+      f = File(SAVE_PATH + self.opt.cate+'/Pascal3D-{}.h5'.format(split), 'r')
+    elif(phase == 'label'):
       f = File(SAVE_PATH + 'ulbPascal3D-{}.h5'.format(split), 'r')
     elif(phase =='train'):
       f = File(SAVE_PATH +'Pascal3D-{}.h5'.format(split), 'r')
@@ -124,11 +126,7 @@ class Pascal3D(data.Dataset):
   def __getitem__(self, index):
     img,img_name = self.LoadImage(index)
 
-    
-
-    #if(self.opt.phase == 'ulb_train'):
-
-    
+    #if(self.opt.phase == 'ulb_train'): 
     class_id = self.annot['class_id'][index]
     c, s = self.GetPartInfo(index)
     s = min(s, max(img.shape[0], img.shape[1])) * 1.0
@@ -148,16 +146,11 @@ class Pascal3D(data.Dataset):
       inp = Crop(img, c, s, r, ref.inputRes)
       inp = inp.transpose(2, 0, 1).astype(np.float32) / 256.
     
-    
-    
     self.view_discretization(v)#角度离散化
 
     #把其他类的view置为numBins
     if self.opt.specificView:
       v = self.making_category_specific_label(v,class_id)
-
-
-
     return dict(img= inp, annot=v)
 
     
@@ -170,7 +163,8 @@ def get_dataloader(opt,split):
     Pascal3D(opt, split), 
     batch_size = opt.trainBatch, 
     shuffle = True,
-    num_workers = int(opt.nThreads)
+    num_workers = int(opt.nThreads),
+    drop_last=True
     )
   elif(split=='train'):
     return  data.DataLoader(
@@ -186,5 +180,13 @@ def get_dataloader(opt,split):
       shuffle = True if opt.DEBUG > 1 else False,
       num_workers = 1)
   
-  
+
+def load_tags_to_h5(annot,split):
+  tags = ['class_id', 'imgname', 'viewpoint_azimuth', 'viewpoint_elevation', 'viewpoint_theta']
+  nSamples = len(annot['imgname'])
+  print('Save Pascal3D pseudo label data {} samples'.format(nSamples))
+  with File(SAVE_PATH+'pseudoPascal3D-{}.h5'.format(split),'w') as f:
+    for tag in tags:
+      f[tag]=annot[tag].copy()
+  f.close()  
   

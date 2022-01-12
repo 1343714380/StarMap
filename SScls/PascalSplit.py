@@ -10,20 +10,22 @@ import scipy.io as sio
 import cv2
 import numpy as np
 import h5py
+from opts import opts
 PI = np.arccos(-1)
 SIZE = 224
 PATH = ref.pascal3dDir
 MODEL_PATH = PATH + 'CAD/'
 ANNOT_PATH = PATH + 'Annotations/'
 IMAGE_PATH = PATH + 'Images/'
-SAVE_PATH = ref.dataDir + 'test2Pascal3D'
+SAVE_PATH = ref.dataDir + 'Pascal3D/sofa/'
 IMGNET_SPLIT_PATH = ref.pascal3dDir + 'Image_sets/'
 PASCAL_SPLIT_PATH = ref.pascal3dDir + 'PASCAL/VOCdevkit/VOC2012/ImageSets/Main/'
 if not os.path.exists(SAVE_PATH):
     os.mkdir(SAVE_PATH)
 
+opt = opts().parse()
 objs = ['bottle_pascal', 'train_imagenet', 'bus_pascal', 'aeroplane_pascal', 'diningtable_imagenet', 'chair_imagenet', 'boat_imagenet', 'bicycle_imagenet', 'bicycle_pascal', 'tvmonitor_pascal',  'bus_imagenet', 'tvmonitor_imagenet', 'aeroplane_imagenet', 'chair_pascal', 'diningtable_pascal',  'train_pascal', 'bottle_imagenet', 'boat_pascal', 'motorbike_imagenet','motorbike_pascal', 'car_imagenet', 'car_pascal', 'sofa_imagenet', 'sofa_pascal']
-
+#objs = ['sofa_imagenet']
 tags = ['class', 'bbox', 'anchors', 'viewpoint', 'cad_index', 'truncated', 'occluded', 'difficult']
 direct_tags = ['bbox', 'truncated', 'occluded', 'difficult']
 tags_viewpoint = ['azimuth_coarse', 'elevation_coarse', 'azimuth', 'elevation', 'distance',
@@ -99,9 +101,7 @@ for split in ['train','val']:
                 data[tag] = data_objects[tag][0]
 
             for i in range(data['anchors'].shape[0]):
-                anchors = data['anchors'][i][0]
-
-    
+                anchors = data['anchors'][i][0]   
                 viewpoint = data['viewpoint'][i][0]
                 
                 if len(anchors) > 0 and len(viewpoint) > 0:
@@ -242,22 +242,28 @@ for split in ['train','val']:
         print(obj, cnt)
 
     print('nProjectedAnchor', nProjectedAnchor , total)
-    index= np.random.choice(total,int(0.05* total),replace=False)
-    lb_data= {}
-    ulb_data= {}
-    for key in annot.keys():
-        if(len(annot[key]) < 1):
-            lb_data[key]=annot[key]
-            ulb_data[key]=annot[key]
-            continue
-        lb_data[key]= np.array(annot[key])[index]
-        ulb_data[key] = np.array(annot[key])[sorted(list(set(range(total)) - set(index)))]
-    
-    with h5py.File(SAVE_PATH +'/Pascal3D-{}.h5'.format(split),'w') as f1:
-        f1.attrs['name'] = 'Pascal3D-{}'.format(split)
-        with h5py.File(SAVE_PATH +'/ulbPascal3D-{}.h5'.format(split),'w') as f2:
-            f2.attrs['name'] = 'ulbPascal3D-{}'.format(split)
+    if(split =='train'):
+        index= np.random.choice(total,int(opt.ssratio* total),replace=False)
+        lb_data= {}
+        ulb_data= {}
+        for key in annot.keys():
+            if(len(annot[key]) < 1):
+                lb_data[key]=annot[key]
+                ulb_data[key]=annot[key]
+                continue
+            lb_data[key]= np.array(annot[key])[index]
+            ulb_data[key] = np.array(annot[key])[sorted(list(set(range(total)) - set(index)))]
+        
+        with h5py.File(SAVE_PATH +'/Pascal3D-{}.h5'.format(split),'w') as f1:
+            f1.attrs['name'] = 'Pascal3D-{}'.format(split)
+            with h5py.File(SAVE_PATH +'/ulbPascal3D-{}.h5'.format(split),'w') as f2:
+                f2.attrs['name'] = 'ulbPascal3D-{}'.format(split)
+                for k in keys:
+                    f1[k] = np.array(lb_data[k])
+                    f2[k] = np.array(ulb_data[k])
+    else:
+        with h5py.File(SAVE_PATH +'/Pascal3D-{}.h5'.format(split),'w') as f:
+            f.attrs['name'] = 'Pascal3D-{}'.format(split)
             for k in keys:
-                f1[k] = np.array(lb_data[k])
-                f2[k] = np.array(ulb_data[k])
+                f[k] = np.array(annot[k])
     

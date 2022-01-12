@@ -8,8 +8,9 @@ import cv2
 import ref
 from progress.bar import Bar
 from utils.debugger import Debugger
+from myPascal3D import load_tags_to_h5
 
-def step(split, epoch, opt, dataLoader, model, criterion, optimizer = None):
+def step(split, epoch, opt, dataLoader, model, optimizer = None):
   if split == 'train':
     model.train()
   else:
@@ -20,17 +21,21 @@ def step(split, epoch, opt, dataLoader, model, criterion, optimizer = None):
   nIters = len(dataLoader)
   bar = Bar('{}'.format(opt.expID), max=nIters)
   
-  pseudo_label = {}
+  pseudo_label = {'imgname' :[], 
+              'class_id' :[], 
+              'viewpoint_azimuth':[],
+              'viewpoint_elevation' :[],
+              'viewpoint_theta' :[]
+              }
   for i, data in enumerate(dataLoader):
     input = data['img']
     input_var = torch.autograd.Variable(input.cuda(opt.GPU, True)).float().cuda(opt.GPU)
     output = model(input_var)
     numBins = opt.numBins
-
     if opt.phase == 'label':
       pseudo_batch = filter_label(data,opt,numBins,output)
-      for key in pseudo_batch:
-        pseudo_label[key]+= pseudo_batch[key]
+      for key in pseudo_batch.keys():
+        pseudo_label[key] += pseudo_batch[key]
       bar.next()
       continue
 
@@ -93,26 +98,29 @@ def step(split, epoch, opt, dataLoader, model, criterion, optimizer = None):
   
   return {'Loss': Loss.avg, 'Acc': Acc.avg}, preds
 
-def train(epoch, opt, train_loader, model, criterion, optimizer):
-  return step('train', epoch, opt, train_loader, model, criterion, optimizer)
+def train(epoch, opt, train_loader, model, optimizer):
+  return step('train', epoch, opt, train_loader, model, optimizer)
   
-def val(epoch, opt, val_loader, model, criterion):
-  return step('val', epoch, opt, val_loader, model, criterion)
+def val(epoch, opt, val_loader, model):
+  return step('val', epoch, opt, val_loader, model)
 
 def filter_label(data,opt,numBins,output):
-  img_name = data['imgname']
+  imgname = data['imgname']
   class_id = data['class_id']
-  output.view(opt.trainBatch,-1,numBins)
+
+  output = output.view(opt.trainBatch,-1,numBins)
+  
   view = torch.rand(output.shape[0],3, numBins)
   if(opt.specificView):
     for i in range(output.shape[0]):
       id = class_id[i]
       view[i] = output[i][3*id : 3*id + 3]
+    view = view.view(-1,3,numBins)
   else:
     view = output
   confidence,view = torch.max(view,dim = -1)
   mark = confidence > opt.thres
-  
+
   pseudo_img=[]
   pseudo_class = []
   azimuth = []
@@ -120,14 +128,16 @@ def filter_label(data,opt,numBins,output):
   theta= []
   for i in range(mark.shape[0]):
     if(mark[i][0] and mark[i][1] and mark[i][2]):
-      pseudo_img.append(img_name[i])
+      if(i==0):
+        print(000)
+      pseudo_img.append(imgname[i])
       pseudo_class.append(class_id[i])
       azimuth.append(view[i][0])
       elevation.append(view[i][1])
       theta.append(view[i][2])
 
-  return dict(img_name = pseudo_img, 
-              cls = pseudo_class, 
+  return dict(imgname = pseudo_img, 
+              class_id = pseudo_class, 
               viewpoint_azimuth= azimuth,
               viewpoint_elevation = elevation,
               viewpoint_theta = theta
@@ -140,12 +150,3 @@ def label_train_set(opt, train_loader, model):
 def label_val_set(opt, val_loader, model):
   annot = step('val', 0, opt, val_loader, model, None)
   load_tags_to_h5(annot,'val')
-
-def load_tags_to_h5(annot,split):
-  tags = ['class_id', 'imgname', 'viewpoint_azimuth', 'viewpoint_elevation', 'viewpoint_theta']
-  nSamples = len(annot['imgname'])
-  print('Save Pascal3D pseudo label data{} samples'.format(nSamples))
-  with h5py.File('{}/testPascal3D/pseudoPascal3D-{}.h5'.format(ref.dataDir, split),'w') as f:
-    for tag in tags:
-      f[tag]=annot[tag].copy()
-  f.close()
