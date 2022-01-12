@@ -41,6 +41,7 @@ class opts():
     self.parser.add_argument('-single_cate', action='store_true', help = '')
     self.parser.add_argument('-cate', default= 'sofa', help = '')
     self.parser.add_argument('-testAccu', action='store_true', help = '')
+    self.parser.add_argument('-unpretrain', action='store_true', help = '')
 
   def parse(self):
     opt = self.parser.parse_args()
@@ -68,6 +69,8 @@ class opts():
     if opt.test:
       opt.expID = opt.expID + 'TEST'
     opt.saveDir = os.path.join(ref.expDir, opt.expID,'ssraio'+str(opt.ssratio))
+    if opt.single_cate :
+      opt.saveDir = os.path.join(opt.saveDir,opt.cate)
 
     args = dict((name, getattr(opt, name)) for name in dir(opt)
                 if not name.startswith('_'))

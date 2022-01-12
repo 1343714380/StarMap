@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import _init_paths
-
+import utils
 import os
 import time
 import datetime
@@ -29,7 +29,14 @@ else:
 
 def main():
   now = datetime.datetime.now()
+  print('Save Path:', opt.saveDir)
+  
   logger = Logger(opt.saveDir + '/logs_{}'.format(now.isoformat()))
+  """
+  writer = SummaryWriter(log_dir=self.config.log_dir)
+  logger_init(self.writer)
+  utils.log_dir_init(config.log_dir)
+  """
   model, optimizer = getModel(opt)
   
   if opt.GPU > -1:

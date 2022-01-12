@@ -107,11 +107,14 @@ def AccViewCls(output, target, numBins, specificView):
     pred = pred.view(target.shape[0], 3).float() * binSize / 180. * pi
     target = target.float() * binSize / 180. * pi
     acc = 0
+    err_ = []
     for t in range(target.shape[0]):
       R_pred = angle2dcm(pred[t])
       R_gt = angle2dcm(target[t])
       err = ((logm(np.dot(np.transpose(R_pred), R_gt)) ** 2).sum()) ** 0.5 / sqrt2
       acc += 1 if err < pi / 6. else 0
-    return 1.0 * acc / target.shape[0]
+      err_.append(err *180 / pi)
+
+    return dict(acc = 1.0 * acc / target.shape[0], err = err_)
 
 

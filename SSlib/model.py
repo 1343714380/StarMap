@@ -10,9 +10,11 @@ model_names = sorted(name for name in models.__dict__
 
 #Re-init optimizer
 def getModel(opt): 
-
-  print("=> using pre-trained model '{}'".format(opt.arch))
-  model = models.__dict__[opt.arch](pretrained=True)
+  if opt.unpretrain:
+    print("=> using unpretrained model '{}'".format(opt.arch))
+  else:
+    print("=> using pre-trained model '{}'".format(opt.arch))
+  model = models.__dict__[opt.arch](pretrained= not opt.unpretrain)
   if opt.arch.startswith('resnet'):
     model.avgpool = nn.AvgPool2d(8, stride=1)
     if '18' in opt.arch:

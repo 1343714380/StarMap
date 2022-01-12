@@ -29,4 +29,11 @@ def Flip(img):
     return img[:, :, :, ::-1].copy()  
   else:
     raise Exception('Flip shape error')
+
+g_log_dir = None
+
+def log_dir_init(log_dir):
+    global g_log_dir
+    g_log_dir = log_dir
+    print(f'log_dir init {g_log_dir}')
   

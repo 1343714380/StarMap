@@ -17,7 +17,7 @@ def step(split, epoch, opt, dataLoader, model, optimizer = None):
     model.eval()
   preds = []
   Loss, Acc = AverageMeter(), AverageMeter()
-  
+  error = []
   nIters = len(dataLoader)
   bar = Bar('{}'.format(opt.expID), max=nIters)
   
@@ -50,7 +50,9 @@ def step(split, epoch, opt, dataLoader, model, optimizer = None):
     # let other label = numBins
     loss =  torch.nn.CrossEntropyLoss(ignore_index = numBins).cuda(opt.GPU)(output.view(-1, numBins), target_var)
 
-    Acc.update(AccViewCls(output.data, view, numBins, opt.specificView))
+    acc_err = AccViewCls(output.data, view, numBins, opt.specificView)
+    error +=acc_err['err']
+    Acc.update(acc_err['acc'])
     Loss.update(loss.item(), input.size(0))
 
     if split == 'train':
@@ -96,7 +98,10 @@ def step(split, epoch, opt, dataLoader, model, optimizer = None):
   if(opt.phase == 'label'):
     return pseudo_label
   
-  return {'Loss': Loss.avg, 'Acc': Acc.avg}, preds
+  median_err = np.median(error)
+  mean_err = np.mean(error)
+  print('median : {}'.format(median_err),'mean : {}'.format(mean_err))
+  return {'Loss': Loss.avg, 'Acc': Acc.avg, 'median':median_err, 'mean':mean_err}, preds , 
 
 def train(epoch, opt, train_loader, model, optimizer):
   return step('train', epoch, opt, train_loader, model, optimizer)
